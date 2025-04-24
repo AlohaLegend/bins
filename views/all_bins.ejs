@@ -1,0 +1,96 @@
+            <head>
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <link rel="stylesheet" href="/styles.css">
+            </head>
+
+            <div style="text-align: center; padding: 10px;">
+              <img src="/logo.png" alt="Company Logo" style="max-height: 60px;">
+            </div>
+
+            <nav>
+              <a href="/">Upload New Bin</a> 
+              <a href="/bins">View All Bins</a>
+            </nav>
+            <hr>
+
+            <h2>All Uploaded Bins</h2>
+
+            <!-- 🔍 Filter UI -->
+            <div style="text-align: center; margin-bottom: 20px;">
+              <div class="filter-bar">
+                <select id="categoryFilter">
+                  <option value="all">All Categories</option>
+                  <% categories.forEach(cat => { %>
+                    <option value="<%= cat %>"><%= cat %></option>
+                  <% }) %>
+                </select>
+
+                <input 
+                  type="text" 
+                  id="searchInput" 
+                  placeholder="Search by name, box #, or contents" 
+                  oninput="filterBins()" 
+                />
+              </div>
+            </div>
+
+            <!-- 📦 Bin Cards -->
+            <div class="bin-card-container">
+              <% bins.forEach(bin => { %>
+                <div class="bin-card"
+                     data-category="<%= bin.category %>"
+                     data-name="<%= bin.binName.toLowerCase() %>"
+                     data-box="<%= bin.boxNumber.toLowerCase() %>"
+                     data-contents="<%= (bin.contents || '').toLowerCase() %>">
+
+
+                  <img src="<%= bin.imageUrl %>" alt="Bin Image" class="bin-card-image">
+                  <h3 class="bin-title"><%= bin.binName %></h3>
+
+                  <div class="bin-card-info">
+                    <p><strong>Contents:</strong> <%= bin.contents %></p>
+                    <p><strong>Box #:</strong> <%= bin.boxNumber %></p>
+                    <p><strong>Category:</strong> <%= bin.category %></p>
+                    <p><strong>Location:</strong><br> <%= bin.location %></p>
+                  </div>
+
+                  <div class="bin-card-actions">
+                    <a href="/bin/<%= bin.id %>">View</a> |
+                    <a href="/bin/edit/<%= bin.id %>">Edit</a> |
+                    <a href="/bin/<%= bin.id %>/qr">QR</a> |
+                    <span onclick="if(confirm('Are you sure?')) { document.getElementById('delete-form-<%= bin.id %>').submit(); }" style="color: #007bff; text-decoration: underline; cursor: pointer;">Delete</span>
+                    <form id="delete-form-<%= bin.id %>" action="/bin/delete/<%= bin.id %>" method="POST" style="display:none;"></form>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+
+            <!-- 🔎 Search/Filter Script -->
+            <script>
+              const categoryFilter = document.getElementById('categoryFilter');
+              const searchInput = document.getElementById('searchInput');
+              const binCards = document.querySelectorAll('.bin-card');
+
+              function filterBins() {
+                const selectedCategory = categoryFilter.value;
+                const searchQuery = searchInput.value.toLowerCase();
+
+                binCards.forEach(card => {
+                  const category = card.getAttribute('data-category');
+                  const name = card.getAttribute('data-name');
+                  const box = card.getAttribute('data-box');
+                  const contents = card.getAttribute('data-contents');
+
+                  const matchesCategory = selectedCategory === 'all' || category === selectedCategory;
+                  const matchesSearch = 
+                    name.includes(searchQuery) ||
+                    box.includes(searchQuery) ||
+                    contents.includes(searchQuery);
+
+                  card.style.display = (matchesCategory && matchesSearch) ? '' : 'none';
+                });
+              }
+
+              categoryFilter.addEventListener('change', filterBins);
+              searchInput.addEventListener('input', filterBins);
+            </script>

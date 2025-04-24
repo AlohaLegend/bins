@@ -1,0 +1,50 @@
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+
+<div style="text-align: center; padding: 10px;">
+  <img src="/logo.png" alt="Company Logo" style="max-height: 60px;">
+</div>
+
+<nav>
+  <a href="/">Upload New Bin</a> 
+  <a href="/bins">View All Bins</a>
+</nav>
+<hr>
+
+<h2>Edit Bin: <%= bin.boxNumber %></h2>
+
+<form method="POST" action="/bin/edit/<%= bin.id %>" enctype="multipart/form-data" class="content-box">
+  <h3>🖼️ Current Image</h3>
+  <img src="<%= bin.imageUrl %>" alt="Bin Image" style="width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px;"><br><br>
+
+  <label for="image">Replace Image (optional):</label>
+  <input type="file" name="image" id="image" accept="image/*"><br><br>
+
+  <h3>📦 Bin Details</h3>
+  <label for="category">Category:</label>
+  <select name="category" id="category" required>
+    <option value="">-- Select Category --</option>
+    <option value="Electronics" <%= bin.category === 'Electronics' ? 'selected' : '' %>>Electronics</option>
+    <option value="Arts & Crafts" <%= bin.category === 'Arts & Crafts' ? 'selected' : '' %>>Arts & Crafts</option>
+    <option value="Clothing" <%= bin.category === 'Clothing' ? 'selected' : '' %>>Clothing</option>
+    <option value="Documents" <%= bin.category === 'Documents' ? 'selected' : '' %>>Documents</option>
+    <option value="Misc" <%= bin.category === 'Misc' ? 'selected' : '' %>>Misc</option>
+  </select><br><br>
+
+  <label for="binName">Bin Name:</label>
+  <input type="text" name="binName" id="binName" value="<%= bin.binName %>" required><br><br>
+
+  <h3>Contents</h3>
+  <label for="contents">Edit contents:</label><br>
+  <textarea name="contents" id="contents" rows="3" required><%= bin.contents %></textarea><br><br>
+
+  <label for="location">Location:</label>
+  <input type="text" name="location" id="location" value="<%= bin.location %>" required><br><br>
+
+  <label for="boxNumber">Box Number:</label>
+  <input type="text" name="boxNumber" id="boxNumber" value="<%= bin.boxNumber %>" required><br><br>
+
+  <button type="submit">💾 Save Changes</button>
+</form>

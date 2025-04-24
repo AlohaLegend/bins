@@ -1,0 +1,53 @@
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/styles.css">
+</head>
+
+<div style="text-align: center; padding: 10px;">
+  <img src="/logo.png" alt="Logo" style="max-height: 60px;">
+</div>
+
+<nav>
+  <a href="/">Upload New Bin</a>
+  <a href="/bins">View All Bins</a>
+</nav>
+<hr>
+
+<h2>QR Code for <%= bin.binName %></h2>
+
+<!-- QR Image Display (with logo + box # embedded already) -->
+<div style="text-align: center;">
+  <img id="qrImage" src="<%= qrCode %>" alt="QR Code" style="max-width: 280px; border: 1px solid #ccc; padding: 10px; background: #fff; border-radius: 8px;">
+</div>
+
+<!-- View Bin Info Page -->
+<p style="text-align: center; margin-top: 12px;">
+  📦 <a href="/bin/<%= bin.id %>" style="color: #fff; font-weight: bold;">View Bin Info Page</a>
+</p>
+
+<!-- Download Button -->
+<div style="text-align: center; margin-top: 10px;">
+  <a id="downloadBtn" href="#" download="Bin_<%= bin.boxNumber %>_QR.png">
+    <button style="padding: 10px 20px;">⬇️ Download QR Code</button>
+  </a>
+  <div style="text-align: center; margin-top: 10px;">
+    <a href="/bin/<%= bin.id %>/pdf" target="_blank">
+      <button style="padding: 10px 20px;">🖨️ Download Printable Card (PDF)</button>
+    </a>
+  </div>
+</div>
+
+<script>
+  // Make the QR code downloadable
+  const qrImage = document.getElementById('qrImage');
+  const downloadBtn = document.getElementById('downloadBtn');
+
+  qrImage.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = qrImage.naturalWidth;
+    canvas.height = qrImage.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(qrImage, 0, 0);
+    downloadBtn.href = canvas.toDataURL('image/png');
+  };
+</script>

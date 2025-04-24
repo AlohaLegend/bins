@@ -1,0 +1,72 @@
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+
+<div style="text-align: center; padding: 10px;">
+  <img src="/logo.png" alt="Company Logo" style="max-height: 60px;">
+</div>
+
+<nav>
+  <a href="/">Upload New Bin</a> 
+  <a href="/bins">View All Bins</a>
+</nav>
+<hr>
+
+<h2>Bin Details</h2>
+
+<div class="bin-detail-card">
+  <img src="<%= bin.imageUrl %>" alt="Bin Image" class="bin-detail-image">
+
+  <div class="bin-detail-info">
+    <p><strong>Bin Name:</strong> <%= bin.binName %></p>
+    <p><strong>Contents:</strong> <%= bin.contents %></p>
+    <p><strong>Box #:</strong> <%= bin.boxNumber %></p>
+    <p><strong>Category:</strong> <%= bin.category %></p>
+    <p><strong>Created:</strong> 
+      <%= new Date(bin.createdAt).toLocaleString('en-US', {  
+        dateStyle: 'medium', 
+        timeStyle: 'short' 
+      }) %>
+    </p>
+
+  </div>
+
+  <div id="map" class="bin-map"></div>
+</div>
+
+<script>
+  const address = "<%= bin.location %>";
+
+  async function loadMapFromAddress(address) {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+      const data = await res.json();
+
+      if (data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+
+        const map = L.map('map').setView([lat, lon], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors',
+          maxZoom: 19,
+        }).addTo(map);
+
+        L.marker([lat, lon]).addTo(map)
+          .bindPopup("<%= bin.binName %> (Box <%= bin.boxNumber %>)")
+          .openPopup();
+      } else {
+        document.getElementById("map").innerHTML = "<p>Location not found.</p>";
+      }
+    } catch (error) {
+      console.error(error);
+      document.getElementById("map").innerHTML = "<p>Error loading map.</p>";
+    }
+  }
+
+  loadMapFromAddress(address);
+</script>
+

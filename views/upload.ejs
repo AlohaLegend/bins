@@ -1,0 +1,81 @@
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<div style="text-align: center; padding: 10px;">
+  <img src="/logo.png" alt="Company Logo" style="max-height: 60px;">
+</div>
+<nav>
+  <a href="/">Upload New Bin</a> 
+  <a href="/bins">View All Bins</a>
+</nav>
+<hr>
+<h2>Upload New Bin</h2>
+<form method="POST" action="/upload" enctype="multipart/form-data" class="content-box">
+
+  <h3>🖼️ Upload an Image</h3>
+  <label for="image">Select an image of the bin's contents:</label><br>
+  <input type="file" name="image" id="image" required><br><br>
+
+  <h3>📦 Bin Details</h3>
+  <label for="category">Choose a category:</label><br>
+  <select name="category" id="category" required>
+    <option value="">-- Select Category --</option>
+    <option value="Electronics">Electronics</option>
+    <option value="Arts & Crafts">Arts & Crafts</option>
+    <option value="Clothing">Clothing</option>
+    <option value="Documents">Documents</option>
+    <option value="Misc">Misc</option>
+  </select><br><br>
+
+  <label for="binName">Name this bin:</label><br>
+  <input type="text" name="binName" id="binName" placeholder="e.g. Halloween Decorations" required><br><br>
+
+  <h3>📝 Contents</h3>
+  <label for="contents">Briefly list what's inside:</label><br>
+  <textarea name="contents" id="contents" rows="3" placeholder="e.g. Halloween lights, fake cobwebs, pumpkin buckets" required></textarea><br><br>
+
+  <h3>📍 Location</h3>
+  <label for="location">Auto-detected address:</label><br>
+  <input type="text" name="location" id="location" placeholder="Auto-filled current address" readonly required><br><br>
+
+  <h3>🔢 Box Number</h3>
+  <label for="boxNumber">Auto-assigned box number (can be changed):</label><br>
+  <input type="text" name="boxNumber" id="boxNumber" value="<%= suggestedBoxNumber %>" required><br><br>
+
+  <button type="submit">Submit Bin</button>
+</form>
+
+<script>
+  window.onload = function () {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(async function (position) {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
+          const data = await response.json();
+
+          if (data && data.address) {
+            const addr = data.address;
+            const street = addr.road || '';
+            const city = addr.city || addr.town || addr.village || '';
+            const state = addr.state || '';
+
+            const cleanLocation = `${street}, ${city}, ${state}`;
+            document.querySelector('input[name="location"]').value = cleanLocation;
+          } else {
+            document.querySelector('input[name="location"]').value = `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`;
+          }
+        } catch (err) {
+          console.error("Reverse geocoding failed:", err);
+          document.querySelector('input[name="location"]').value = `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`;
+        }
+      });
+    }
+  };
+</script>
+
+
+

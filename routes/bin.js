@@ -124,7 +124,7 @@ router.get('/bin/:id/qr', async (req, res) => {
     const qrUrl = `${req.protocol}://${req.get('host')}/bin/${bin.id}`;
 
     try {
-      const qrBuffer = await QRCode.toBuffer(qrUrl, { width: 500, margin: 2, errorCorrectionLevel: 'H' });
+      const qrBuffer = await QRCode.toBuffer(qrUrl, { width: 800, margin: 2, errorCorrectionLevel: 'H' });
       const qrImage = await Jimp.read(qrBuffer);
 
       // Logo background with rounded corners

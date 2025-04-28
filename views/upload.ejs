@@ -21,19 +21,37 @@
   <label for="category">Choose a category:</label><br>
   <select name="category" id="category" required>
     <option value="">-- Select Category --</option>
-    <option value="Electronics">Electronics</option>
-    <option value="Arts & Crafts">Arts & Crafts</option>
-    <option value="Clothing">Clothing</option>
-    <option value="Documents">Documents</option>
+    <option value="Audio/Visual">Audio/Visual</option>
+    <option value="Lighting">Lighting</option>
+    <option value="Signage & Branding">Signage & Branding</option>
+    <option value="Props & Decor">Props & Decor</option>
+    <option value="Promotional Materials">Promotional Materials</option>
+    <option value="Furniture">Furniture</option>
+    <option value="Cables & Power">Cables & Power</option>
+    <option value="Tools & Hardware">Tools & Hardware</option>
+    <option value="Safety & PPE">Safety & PPE</option>
+    <option value="Stationery & Office">Stationery & Office</option>
+    <option value="Merchandise">Merchandise</option>
+    <option value="Costumes/Wardrobe">Costumes/Wardrobe</option>
+    <option value="Food & Beverage">Food & Beverage</option>
     <option value="Misc">Misc</option>
-  </select><br><br>
+  </select>
+<br><br>
 
   <label for="binName">Name this bin:</label><br>
   <input type="text" name="binName" id="binName" placeholder="e.g. Halloween Decorations" required><br><br>
 
   <h3>📝 Contents</h3>
-  <label for="contents">Briefly list what's inside:</label><br>
-  <textarea name="contents" id="contents" rows="3" placeholder="e.g. Halloween lights, fake cobwebs, pumpkin buckets" required></textarea><br><br>
+  <label for="contents"><b>Briefly list items inside (comma separated):</b></label>
+  <textarea 
+    name="contents" 
+    id="contents" 
+    rows="4" 
+    placeholder="e.g. Wireless mics, HDMI cables, extension cords"
+    style="font-size: 1.1em; padding: 10px; width: 100%; box-sizing: border-box;"
+    required
+  ></textarea>
+<br><br>
 
   <h3>📍 Location</h3>
   <label for="location">Auto-detected address:</label><br>

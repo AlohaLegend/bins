@@ -127,7 +127,7 @@ router.get('/bin/:id/qr', async (req, res) => {
     if (!results.length) return res.status(404).send("Bin not found");
 
     const bin = results[0];
-    const qrUrl = `${req.protocol}://${req.get('host')}/bin/${bin.id}`;
+    const qrUrl = `${req.protocol}://${req.get('host')}/bin/${bin.id}?scanned=true`;
 
     try {
       const qrBuffer = await QRCode.toBuffer(qrUrl, { width: 800, margin: 2, errorCorrectionLevel: 'H' });
@@ -260,7 +260,7 @@ router.get('/bin/:id/pdf', (req, res) => {
 
     try {
       // 🔳 Generate QR code buffer
-      const qrUrl = `${req.protocol}://${req.get('host')}/bin/${bin.id}`;
+      const qrUrl = `${req.protocol}://${req.get('host')}/bin/${bin.id}?scanned=true`;
       const qrBuffer = await QRCode.toBuffer(qrUrl, {
         width: 300,
         margin: 1,
@@ -317,19 +317,22 @@ router.post('/bin/:id/update-location', async (req, res) => {
   }
 
   try {
-    // Use Google Reverse Geocoding to get a nice address
     const apiKey = process.env.GOOGLE_API_KEY;
-    const geoRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`);
+    const geoRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&result_type=street_address|route|intersection&key=${apiKey}`);
     const geoData = await geoRes.json();
 
-    let formattedAddress = `${lat.toFixed(4)}, ${lon.toFixed(4)}`; // Default if no good address
+    let formattedAddress = `${lat.toFixed(4)}, ${lon.toFixed(4)}`; // Default fallback
 
     if (geoData.status === "OK" && geoData.results.length > 0) {
       formattedAddress = geoData.results[0].formatted_address;
     }
 
-    // Update database
-    db.query(`UPDATE bins SET location = ? WHERE id = ?`, [formattedAddress, binId], (err) => {
+    const updateQuery = `
+      UPDATE bins
+      SET location = ?, locationLastUpdated = NOW()
+      WHERE id = ?
+    `;
+    db.query(updateQuery, [formattedAddress, binId], (err) => {
       if (err) {
         console.error('❌ Database update error:', err);
         return res.status(500).send('Database update failed');
@@ -342,6 +345,7 @@ router.post('/bin/:id/update-location', async (req, res) => {
     res.status(500).send('Location update error');
   }
 });
+
 
 router.post('/reverse-geocode', async (req, res) => {
   const { lat, lon } = req.body;
@@ -356,16 +360,26 @@ router.post('/reverse-geocode', async (req, res) => {
     const geoData = await geoRes.json();
 
     if (geoData.status === "OK" && geoData.results.length > 0) {
-      const formattedAddress = geoData.results[0].formatted_address;
+      const goodResult = geoData.results.find(result =>
+        result.types.includes('street_address') ||
+        result.types.includes('premise') ||
+        result.types.includes('subpremise')
+      );
+
+      const formattedAddress = goodResult
+        ? goodResult.formatted_address
+        : geoData.results[0]?.formatted_address || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+
       res.send({ address: formattedAddress });
     } else {
       res.status(404).send({ address: `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}` });
     }
 
   } catch (error) {
-    console.error('❌ Reverse geocoding server error:', error);
+    console.error('Reverse geocoding server error:', error);
     res.status(500).send({ address: `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}` });
   }
 });
+
 
 module.exports = router;

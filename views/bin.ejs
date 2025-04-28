@@ -41,6 +41,16 @@
   </div>
 
   <div id="map"></div>
+  <p><strong>Location Last Updated:</strong> 
+    <% if (bin.locationLastUpdated) { %>
+      <%= new Date(bin.locationLastUpdated).toLocaleString('en-US', {  
+        dateStyle: 'medium', 
+        timeStyle: 'short'
+      }) %>
+    <% } else { %>
+      Never
+    <% } %>
+  </p>
 </div>
 
 <!-- Load Google Map and show bin location -->
@@ -80,30 +90,37 @@
 </script>
 
 <!-- Auto-update bin location after QR scan -->
-<script>
-  window.onload = function () {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(async function (position) {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
+      <script>
+        window.onload = function () {
+          const urlParams = new URLSearchParams(window.location.search);
+          const scanned = urlParams.get('scanned');
 
-        try {
-          await fetch(`/bin/<%= bin.id %>/update-location`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ lat, lon })
-          });
-          console.log('✅ Bin location updated');
-        } catch (error) {
-          console.error('❌ Failed to update bin location:', error);
-        }
-      }, function (error) {
-        console.error('Geolocation error:', error);
-      });
-    } else {
-      console.error('Geolocation not supported.');
-    }
-  };
-</script>
+          if (scanned === 'true') {
+            if ('geolocation' in navigator) {
+              navigator.geolocation.getCurrentPosition(async function (position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+
+                try {
+                  await fetch(`/bin/<%= bin.id %>/update-location`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ lat, lon })
+                  });
+                  console.log('✅ Bin location updated after QR scan');
+                } catch (error) {
+                  console.error('❌ Failed to update bin location:', error);
+                }
+              }, function (error) {
+                console.error('Geolocation error:', error);
+              });
+            } else {
+              console.error('Geolocation not supported.');
+            }
+          }
+        };
+      </script>
+
+

@@ -6,6 +6,9 @@ const QRCode = require('qrcode');
 const db = require('../index');
 const cloudinary = require('cloudinary').v2;
 const Jimp = require('jimp');
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
+router.use(express.json());
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_NAME,
@@ -49,7 +52,10 @@ router.get('/bin/:id', (req, res) => {
   db.query(`SELECT * FROM bins WHERE id = ?`, [req.params.id], (err, results) => {
     if (err) throw err;
     if (!results.length) return res.status(404).send("Bin not found");
-    res.render('bin', { bin: results[0] });
+    res.render('bin', { 
+      bin: results[0], 
+      googleApiKey: process.env.GOOGLE_API_KEY 
+    });
   });
 });
 
@@ -300,6 +306,66 @@ router.post('/bin/delete/:id', (req, res) => {
     if (err) throw err;
     res.redirect('/bins');
   });
+});
+
+router.post('/bin/:id/update-location', async (req, res) => {
+  const { lat, lon } = req.body;
+  const binId = req.params.id;
+
+  if (!lat || !lon) {
+    return res.status(400).send('Missing latitude or longitude');
+  }
+
+  try {
+    // Use Google Reverse Geocoding to get a nice address
+    const apiKey = process.env.GOOGLE_API_KEY;
+    const geoRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`);
+    const geoData = await geoRes.json();
+
+    let formattedAddress = `${lat.toFixed(4)}, ${lon.toFixed(4)}`; // Default if no good address
+
+    if (geoData.status === "OK" && geoData.results.length > 0) {
+      formattedAddress = geoData.results[0].formatted_address;
+    }
+
+    // Update database
+    db.query(`UPDATE bins SET location = ? WHERE id = ?`, [formattedAddress, binId], (err) => {
+      if (err) {
+        console.error('❌ Database update error:', err);
+        return res.status(500).send('Database update failed');
+      }
+      res.send('Location updated');
+    });
+
+  } catch (error) {
+    console.error('❌ Reverse geocoding failed:', error);
+    res.status(500).send('Location update error');
+  }
+});
+
+router.post('/reverse-geocode', async (req, res) => {
+  const { lat, lon } = req.body;
+
+  if (!lat || !lon) {
+    return res.status(400).send('Missing latitude or longitude');
+  }
+
+  try {
+    const apiKey = process.env.GOOGLE_API_KEY;
+    const geoRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`);
+    const geoData = await geoRes.json();
+
+    if (geoData.status === "OK" && geoData.results.length > 0) {
+      const formattedAddress = geoData.results[0].formatted_address;
+      res.send({ address: formattedAddress });
+    } else {
+      res.status(404).send({ address: `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}` });
+    }
+
+  } catch (error) {
+    console.error('❌ Reverse geocoding server error:', error);
+    res.status(500).send({ address: `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}` });
+  }
 });
 
 module.exports = router;

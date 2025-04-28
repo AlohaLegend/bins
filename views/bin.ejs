@@ -1,8 +1,15 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/styles.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    #map {
+      height: 300px; 
+      width: 100%; 
+      margin-top: 10px; 
+      border-radius: 10px;
+    }
+  </style>
+  <script src="https://maps.googleapis.com/maps/api/js?key=<%= googleApiKey %>"></script> <!-- ✅ corrected -->
 </head>
 
 <div style="text-align: center; padding: 10px;">
@@ -31,33 +38,35 @@
         timeStyle: 'short' 
       }) %>
     </p>
-
   </div>
 
-  <div id="map" class="bin-map"></div>
+  <div id="map"></div>
 </div>
 
+<!-- Load Google Map and show bin location -->
 <script>
   const address = "<%= bin.location %>";
+  const GOOGLE_API_KEY = "<%= googleApiKey %>"; // ✅ injected
 
-  async function loadMapFromAddress(address) {
+  async function loadGoogleMap(address) {
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-      const data = await res.json();
+      const geocodeRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_API_KEY}`);
+      const geocodeData = await geocodeRes.json();
 
-      if (data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lon = parseFloat(data[0].lon);
+      if (geocodeData.status === "OK" && geocodeData.results.length > 0) {
+        const location = geocodeData.results[0].geometry.location;
 
-        const map = L.map('map').setView([lat, lon], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap contributors',
-          maxZoom: 19,
-        }).addTo(map);
+        const map = new google.maps.Map(document.getElementById('map'), {
+          center: location,
+          zoom: 14,
+        });
 
-        L.marker([lat, lon]).addTo(map)
-          .bindPopup("<%= bin.binName %> (Box <%= bin.boxNumber %>)")
-          .openPopup();
+        new google.maps.Marker({
+          position: location,
+          map,
+          title: "<%= bin.binName %> (Box <%= bin.boxNumber %>)",
+        });
+
       } else {
         document.getElementById("map").innerHTML = "<p>Location not found.</p>";
       }
@@ -67,6 +76,34 @@
     }
   }
 
-  loadMapFromAddress(address);
+  loadGoogleMap(address);
 </script>
 
+<!-- Auto-update bin location after QR scan -->
+<script>
+  window.onload = function () {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(async function (position) {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        try {
+          await fetch(`/bin/<%= bin.id %>/update-location`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ lat, lon })
+          });
+          console.log('✅ Bin location updated');
+        } catch (error) {
+          console.error('❌ Failed to update bin location:', error);
+        }
+      }, function (error) {
+        console.error('Geolocation error:', error);
+      });
+    } else {
+      console.error('Geolocation not supported.');
+    }
+  };
+</script>
